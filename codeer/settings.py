@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hz6rbrip5r)81l2^wci-_10$(bdbp-y0nweu6^x@gx3#c2kws&'
+SECRET_KEY = 'django-insecure-yt81_vubxri$=6b4@g_8q45dz&t8#tzo&*^s7kvuskvc&5b0*3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,9 +37,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'codeer_app',
     'rest_framework',
-    'corsheaders',
+    'rest_framework.authtoken',
+    'apps.accounts',
+    'apps.offers',
+    'apps.orders',
+    'apps.reviews',
+    'apps.core',
 ]
 
 MIDDLEWARE = [
@@ -55,19 +59,15 @@ MIDDLEWARE = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-
   'http://127.0.0.1:5500',
   'http://localhost:5500',
-
 ]
+
 
 CORS_ALLOWED_ORIGINS = [
-
   'http://127.0.0.1:5500',
   'http://localhost:5500',
-
 ]
-
 
 ROOT_URLCONF = 'codeer.urls'
 
@@ -140,3 +140,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+       'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
