@@ -93,29 +93,33 @@ class OfferSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """
-        Validates that the 'details' field in the input data includes all required offer types.
-
-        Checks that each detail entry contains an 'offer_type' field and that the set of offer types
-        includes 'basic', 'standard', and 'premium'.
+        Validates that the 'details' field in the input data includes all required offer types,
+        but only for POST/PUT. PATCH is allowed to update single offer types.
 
         params:
             data (dict): The input data to validate.
         raise:
-            ValidationError: If any detail is missing the 'offer_type' field or if
-                            required offer types are not all present.
+            ValidationError: If any detail is missing 'offer_type' or required types (on full update).
         return:
             dict: The validated data unchanged.
         """
+        request = self.context.get("request")
         details_data = self.initial_data.get('details', [])
-        required_types = {"basic", "standard", "premium"}
-        existing_types = {detail.get("offer_type") for detail in details_data}
+
+        if not details_data:
+            return data
 
         for detail in details_data:
             if "offer_type" not in detail:
                 raise ValidationError({"details": "Each offer detail must include an 'offer_type' field."})
 
-        if not required_types.issubset(existing_types):
-            raise ValidationError({"details": "Offers must include 'basic', 'standard', and 'premium' offer types."})
+        if request.method in ["POST", "PUT"]:
+            required_types = {"basic", "standard", "premium"}
+            existing_types = {detail.get("offer_type") for detail in details_data}
+            if not required_types.issubset(existing_types):
+                raise ValidationError({
+                    "details": "Offers must include 'basic', 'standard', and 'premium' offer types."
+                })
 
         return data
 
@@ -145,7 +149,7 @@ class OfferSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """
-        Update Offer instance and nested OfferDetails.
+        Update Offer instance and optionally its OfferDetails.
 
         params:
             instance (Offer): Offer instance to update.
@@ -153,13 +157,14 @@ class OfferSerializer(serializers.ModelSerializer):
         return:
             Offer: Updated Offer instance.
         """
-        details_data = validated_data.pop('offer_details', None)  
+        details_data = self.initial_data.get('details', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
         if details_data is not None:
-            existing_details = {detail.offer_type: detail for detail in instance.offer_details.all()}  
+            existing_details = {detail.offer_type: detail for detail in instance.offer_details.all()}
 
             for detail_data in details_data:
                 offer_type = detail_data.get("offer_type")
@@ -169,7 +174,7 @@ class OfferSerializer(serializers.ModelSerializer):
                         setattr(detail_instance, attr, value)
                     detail_instance.save()
                 else:
-                    OfferDetails.objects.create(offer=instance, **detail_data)  
+                    OfferDetails.objects.create(offer=instance, **detail_data)
 
         return instance
     
