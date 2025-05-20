@@ -12,9 +12,18 @@ class OfferDetailsSerializer(serializers.ModelSerializer):
     return:
         Serialized data of OfferDetails instance.
     """
+
     class Meta:
         model = OfferDetails
-        fields = ['id', 'title', 'revisions', 'delivery_time_in_days', 'price', 'features', 'offer_type']
+        fields = [
+            "id",
+            "title",
+            "revisions",
+            "delivery_time_in_days",
+            "price",
+            "features",
+            "offer_type",
+        ]
 
 
 class OfferDetailsGETSerializer(serializers.ModelSerializer):
@@ -25,11 +34,12 @@ class OfferDetailsGETSerializer(serializers.ModelSerializer):
     return:
         Serialized data with id and url fields.
     """
+
     url = serializers.SerializerMethodField()
 
     class Meta:
         model = OfferDetails
-        fields = ['id', 'url']
+        fields = ["id", "url"]
 
     def get_url(self, obj):
         """
@@ -40,9 +50,9 @@ class OfferDetailsGETSerializer(serializers.ModelSerializer):
         return:
             str: URL string for the OfferDetails.
         """
-        url = reverse('offerdetails-detail', args=[obj.id])
-        return url.replace('/api', '')  
-    
+        url = reverse("offerdetails-detail", args=[obj.id])
+        return url.replace("/api", "")
+
 
 class OfferSerializer(serializers.ModelSerializer):
     """
@@ -55,6 +65,7 @@ class OfferSerializer(serializers.ModelSerializer):
         ValidationError: If 'details' data is missing required 'offer_type' or
                          does not include all required types ('basic', 'standard', 'premium').
     """
+
     details = serializers.SerializerMethodField()
     user_details = serializers.SerializerMethodField()
     min_price = serializers.SerializerMethodField()
@@ -63,9 +74,20 @@ class OfferSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Offer
-        fields = ['id', 'user', 'title', 'image', 'description', 'created_at', 'updated_at', 'details', 'min_price', 'min_delivery_time', 'user_details']
+        fields = [
+            "id",
+            "user",
+            "title",
+            "image",
+            "description",
+            "created_at",
+            "updated_at",
+            "details",
+            "min_price",
+            "min_delivery_time",
+            "user_details",
+        ]
         extra_kwargs = {"user": {"read_only": True}}
-
 
     def to_representation(self, instance):
         """
@@ -78,19 +100,18 @@ class OfferSerializer(serializers.ModelSerializer):
         """
         data = super().to_representation(instance)
         request = self.context.get("request")
-        
-        view = self.context.get('view', None)
-        if request and view and getattr(view, 'action', None) == "list":
+
+        view = self.context.get("view", None)
+        if request and view and getattr(view, "action", None) == "list":
             data["user_details"] = {
                 "first_name": instance.user.first_name,
                 "last_name": instance.user.last_name,
-                "username": instance.user.username
+                "username": instance.user.username,
             }
         else:
             data.pop("user_details", None)
         return data
-    
-    
+
     def validate(self, data):
         """
         Validates that the 'details' field in the input data includes all required offer types,
@@ -104,7 +125,7 @@ class OfferSerializer(serializers.ModelSerializer):
             dict: The validated data unchanged.
         """
         request = self.context.get("request")
-        details_data = self.initial_data.get('details', [])
+        details_data = self.initial_data.get("details", [])
 
         if not details_data:
             return data
@@ -117,12 +138,11 @@ class OfferSerializer(serializers.ModelSerializer):
             required_types = {"basic", "standard", "premium"}
             existing_types = {detail.get("offer_type") for detail in details_data}
             if not required_types.issubset(existing_types):
-                raise ValidationError({
-                    "details": "Offers must include 'basic', 'standard', and 'premium' offer types."
-                })
+                raise ValidationError(
+                    {"details": "Offers must include 'basic', 'standard', and 'premium' offer types."}
+                )
 
         return data
-
 
     def create(self, validated_data):
         """
@@ -135,9 +155,9 @@ class OfferSerializer(serializers.ModelSerializer):
         raise:
             ValidationError: If offer details are missing 'offer_type' or required types.
         """
-        details_data = self.initial_data.get('details', [])  
-        user = self.context["request"].user  
-        validated_data["user"] = user  
+        details_data = self.initial_data.get("details", [])
+        user = self.context["request"].user
+        validated_data["user"] = user
 
         offer = Offer.objects.create(**validated_data)
 
@@ -145,7 +165,6 @@ class OfferSerializer(serializers.ModelSerializer):
         OfferDetails.objects.bulk_create(offer_details)
 
         return offer
-
 
     def update(self, instance, validated_data):
         """
@@ -157,7 +176,7 @@ class OfferSerializer(serializers.ModelSerializer):
         return:
             Offer: Updated Offer instance.
         """
-        details_data = self.initial_data.get('details', None)
+        details_data = self.initial_data.get("details", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -177,8 +196,7 @@ class OfferSerializer(serializers.ModelSerializer):
                     OfferDetails.objects.create(offer=instance, **detail_data)
 
         return instance
-    
-    
+
     def get_details(self, obj):
         """
         Provide different serializers for details depending on request method.
@@ -191,10 +209,9 @@ class OfferSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
 
         if request and request.method in ["POST", "PUT"]:
-            return OfferDetailsSerializer(obj.offer_details.all(), many=True).data  
+            return OfferDetailsSerializer(obj.offer_details.all(), many=True).data
 
         return OfferDetailsGETSerializer(obj.offer_details.all(), many=True).data
-
 
     def get_user_details(self, obj):
         """
@@ -208,9 +225,8 @@ class OfferSerializer(serializers.ModelSerializer):
         return {
             "first_name": obj.user.first_name,
             "last_name": obj.user.last_name,
-            "username": obj.user.username
+            "username": obj.user.username,
         }
-
 
     def get_min_price(self, obj):
         """
@@ -221,9 +237,8 @@ class OfferSerializer(serializers.ModelSerializer):
         return:
             float: Minimum price or 0.00 if none available.
         """
-        min_price = obj.offer_details.aggregate(min_price=Min('price'))['min_price']
+        min_price = obj.offer_details.aggregate(min_price=Min("price"))["min_price"]
         return float(min_price) if min_price is not None else 0.00
-
 
     def get_min_delivery_time(self, obj):
         """
@@ -234,10 +249,9 @@ class OfferSerializer(serializers.ModelSerializer):
         return:
             int: Minimum delivery time in days or 0 if none available.
         """
-        min_time = obj.offer_details.aggregate(min_time=Min('delivery_time_in_days'))['min_time']
+        min_time = obj.offer_details.aggregate(min_time=Min("delivery_time_in_days"))["min_time"]
         return min_time if min_time is not None else 0
-    
-    
+
     def get_image(self, obj):
         """
         Return absolute URL for the offer image if present.
@@ -248,6 +262,6 @@ class OfferSerializer(serializers.ModelSerializer):
             str or None: Absolute URL of the image or None if no image.
         """
         if obj.image:
-             request = self.context.get('request')  
-             return request.build_absolute_uri(obj.image.url)  
+            request = self.context.get("request")
+            return request.build_absolute_uri(obj.image.url)
         return None

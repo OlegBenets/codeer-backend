@@ -17,11 +17,11 @@ class IsCustomerOrAdmin(permissions.BasePermission):
         returns:
             bool: True if the user has permission, False otherwise.
         """
-        user_profile = getattr(request.user, 'profile', None)
+        user_profile = getattr(request.user, "profile", None)
         return (
-            request.user.is_authenticated and 
-            user_profile and 
-            (user_profile.type == 'customer' or request.user.is_staff)
+            request.user.is_authenticated
+            and user_profile
+            and (user_profile.type == "customer" or request.user.is_staff)
         )
 
     def has_object_permission(self, request, view, obj):
@@ -41,6 +41,3 @@ class IsCustomerOrAdmin(permissions.BasePermission):
             return True
 
         return obj.customer_user == request.user or request.user.is_staff
-
-
-    

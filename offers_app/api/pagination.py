@@ -10,6 +10,7 @@ class CustomPageNumberPagination(PageNumberPagination):
         page_size_query_param (str): Query parameter name to override page size.
         max_page_size (int): Maximum allowed number of items per page.
     """
-    page_size = 6  
-    page_size_query_param = 'page_size'  
+
+    page_size = 6
+    page_size_query_param = "page_size"
     max_page_size = 100

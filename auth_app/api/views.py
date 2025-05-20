@@ -7,7 +7,13 @@ from django.contrib.auth.models import User
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.authtoken.models import Token
 from auth_app.models import Profile
-from .serializers import ProfileSerializer, RegistrationSerializer, LoginSerializer, BusinessUserListSerializer, CustomerUserListSerializer
+from .serializers import (
+    ProfileSerializer,
+    RegistrationSerializer,
+    LoginSerializer,
+    BusinessUserListSerializer,
+    CustomerUserListSerializer,
+)
 from django.shortcuts import get_object_or_404
 
 
@@ -22,7 +28,7 @@ class ProfileDetailView(generics.RetrieveUpdateAPIView):
         user_id = self.kwargs["pk"]
         obj = get_object_or_404(Profile, user__id=user_id)
 
-        if self.request.method in ['PATCH', 'PUT']:
+        if self.request.method in ["PATCH", "PUT"]:
             if not self.request.user.is_staff and obj.user != self.request.user:
                 raise PermissionDenied("You can only edit your own profile.")
 
@@ -34,7 +40,7 @@ class BusinessUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Profile.objects.filter(type='business')
+        return Profile.objects.filter(type="business")
 
 
 class CustomerUserListView(generics.ListAPIView):
@@ -42,7 +48,7 @@ class CustomerUserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Profile.objects.filter(type='customer')
+        return Profile.objects.filter(type="customer")
 
 
 class RegistrationView(APIView):
@@ -56,18 +62,21 @@ class RegistrationView(APIView):
 
             token, created = Token.objects.get_or_create(user=user)
 
-            return Response({
-                "token": token.key,
-                "user_id": user.id,
-                "username": user.username,
-                "email": user.email
-            }, status=status.HTTP_201_CREATED)
+            return Response(
+                {
+                    "token": token.key,
+                    "user_id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
-    permission_classes = [AllowAny]  
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -76,4 +85,3 @@ class LoginView(APIView):
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    

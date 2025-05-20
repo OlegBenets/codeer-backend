@@ -11,6 +11,7 @@ class BaseInfoViewset(APIView):
     """
     API endpoint to retrieve general statistics about the platform.
     """
+
     def get(self, request):
         """
         Return statistics including:
@@ -23,14 +24,17 @@ class BaseInfoViewset(APIView):
             Response: JSON with stats data.
         """
         review_count = Review.objects.count()
-        average_rating = Review.objects.aggregate(avg_rating=Avg('rating'))['avg_rating']
+        average_rating = Review.objects.aggregate(avg_rating=Avg("rating"))["avg_rating"]
         average_rating = round(average_rating, 1) if average_rating is not None else 0.0
-        business_profile_count = Profile.objects.filter(type = 'business').count()
+        business_profile_count = Profile.objects.filter(type="business").count()
         offer_count = Offer.objects.count()
 
-        return Response({
-            "review_count": review_count,
-            "average_rating": average_rating,
-            "business_profile_count": business_profile_count,
-            "offer_count": offer_count
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "review_count": review_count,
+                "average_rating": average_rating,
+                "business_profile_count": business_profile_count,
+                "offer_count": offer_count,
+            },
+            status=status.HTTP_200_OK,
+        )

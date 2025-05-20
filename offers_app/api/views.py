@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from offers_app.models import Offer, OfferDetails
 from .serializers import OfferSerializer, OfferDetailsSerializer
 from rest_framework.permissions import AllowAny
-from .pagination import CustomPageNumberPagination  
+from .pagination import CustomPageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.db.models import Min
 from rest_framework.exceptions import PermissionDenied, AuthenticationFailed
@@ -15,21 +15,25 @@ class OfferViewset(viewsets.ModelViewSet):
     """
     A viewset for managing business user offers.
     """
+
     queryset = Offer.objects.all()
     serializer_class = OfferSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     permission_classes = [AllowAny]
     pagination_class = CustomPageNumberPagination
 
     filterset_fields = {
-        'user': ['exact'], 
-        'updated_at': ['gte'],
-        'offer_details__price': ['gte'],  
-        'offer_details__delivery_time_in_days': ['exact', 'lte', 'gte']
+        "user": ["exact"],
+        "updated_at": ["gte"],
+        "offer_details__price": ["gte"],
+        "offer_details__delivery_time_in_days": ["exact", "lte", "gte"],
     }
-    search_fields = ['title', 'description']
-    ordering_fields = ['updated_at']
-
+    search_fields = ["title", "description"]
+    ordering_fields = ["updated_at"]
 
     def get_queryset(self):
         """
@@ -39,17 +43,15 @@ class OfferViewset(viewsets.ModelViewSet):
             creator_id (int): Filter by user ID
             max_delivery_time (int): Maximum allowed delivery time (in days)
             min_price (float): Minimum price filter
-        return: 
+        return:
             QuerySet of filtered Offer instances
         raise:
             ValidationError: If max_delivery_time or min_price is not numeric
         """
-        queryset = Offer.objects.annotate(
-            min_price=Min('offer_details__price')
-        )
-        creator_id = self.request.query_params.get('creator_id')
-        max_delivery_time = self.request.query_params.get('max_delivery_time')
-        min_price = self.request.query_params.get('min_price')
+        queryset = Offer.objects.annotate(min_price=Min("offer_details__price"))
+        creator_id = self.request.query_params.get("creator_id")
+        max_delivery_time = self.request.query_params.get("max_delivery_time")
+        min_price = self.request.query_params.get("min_price")
 
         if creator_id:
             queryset = queryset.filter(user_id=creator_id)
@@ -69,8 +71,7 @@ class OfferViewset(viewsets.ModelViewSet):
             queryset = queryset.filter(min_price__gte=min_price)
 
         return queryset
-    
-    
+
     def update(self, request, *args, **kwargs):
         """
         Update an offer and its details, validating permissions and user role.
@@ -88,7 +89,7 @@ class OfferViewset(viewsets.ModelViewSet):
         if not request.user.is_authenticated:
             raise AuthenticationFailed({"detail": "Authentication required."})
 
-        instance = get_object_or_404(Offer, pk=kwargs.get("pk"))  
+        instance = get_object_or_404(Offer, pk=kwargs.get("pk"))
 
         if instance.user != request.user:
             raise PermissionDenied({"detail": "You do not have permission to edit this offer."})
@@ -97,7 +98,7 @@ class OfferViewset(viewsets.ModelViewSet):
         if not user_profile or user_profile.type != "business":
             raise PermissionDenied({"detail": "Only business users may edit their offers."})
 
-        details_data = request.data.get('details', [])
+        details_data = request.data.get("details", [])
 
         if details_data is not None:
             existing_details = {detail.offer_type: detail for detail in instance.offer_details.all()}
@@ -120,7 +121,6 @@ class OfferViewset(viewsets.ModelViewSet):
 
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
-
     def retrieve(self, request, *args, **kwargs):
         """
         Retrieve a specific offer by ID.
@@ -133,7 +133,6 @@ class OfferViewset(viewsets.ModelViewSet):
         instance = get_object_or_404(Offer, pk=kwargs.get("pk"))
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
 
     def perform_create(self, serializer):
         """
@@ -150,7 +149,6 @@ class OfferViewset(viewsets.ModelViewSet):
             raise PermissionDenied({"detail": "Only business users may create offers."})
         serializer.save(user=self.request.user)
 
-
     def perform_update(self, serializer):
         """
         Save offer update, ensuring only the owner can update.
@@ -160,7 +158,7 @@ class OfferViewset(viewsets.ModelViewSet):
         """
         instance = self.get_object()
         if not self.request.user.is_authenticated:
-            raise AuthenticationFailed({"detail": "Authentication required."}) 
+            raise AuthenticationFailed({"detail": "Authentication required."})
         if instance.user != self.request.user:
             raise PermissionDenied({"detail": "You do not have permission to edit this offer."})
         user_profile = getattr(self.request.user, "profile", None)
@@ -168,17 +166,18 @@ class OfferViewset(viewsets.ModelViewSet):
             raise PermissionDenied({"detail": "Only business users may edit their offers."})
         serializer.save()
 
-
     def handle_exception(self, exc):
         """
         Custom exception handler for internal server errors.
         """
         response = super().handle_exception(exc)
         if response is None:
-            return Response({"detail": "Internal server error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"detail": "Internal server error."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return response
-        
-        
+
     def destroy(self, request, *args, **kwargs):
         """
         Delete an offer.
@@ -188,13 +187,13 @@ class OfferViewset(viewsets.ModelViewSet):
             PermissionDenied: If the user is a customer
         """
         if not request.user.is_authenticated:
-            raise AuthenticationFailed("You must be logged in to perform this action.")  
+            raise AuthenticationFailed("You must be logged in to perform this action.")
 
         user_profile = getattr(self.request.user, "profile", None)
-        if not user_profile or user_profile.type == 'customer':
-            raise PermissionDenied("Customers are not allowed to delete offers.") 
-        
-        instance = get_object_or_404(Offer, pk=kwargs.get("pk"))  
+        if not user_profile or user_profile.type == "customer":
+            raise PermissionDenied("Customers are not allowed to delete offers.")
+
+        _ = get_object_or_404(Offer, pk=kwargs.get("pk"))
 
         return super().destroy(request, *args, **kwargs)
 
@@ -203,9 +202,9 @@ class OfferDetailsViewSet(viewsets.ModelViewSet):
     """
     ViewSet for retrieving offer detail entries.
     """
+
     queryset = OfferDetails.objects.all()
     serializer_class = OfferDetailsSerializer
-
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -220,14 +219,19 @@ class OfferDetailsViewSet(viewsets.ModelViewSet):
             PermissionDenied: If the user is not authenticated.
         """
         if not request.user.is_authenticated:
-            return Response({"detail": "User is not authenticated."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "User is not authenticated."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         pk = kwargs.get("pk")
-        if pk is None or not str(pk).isdigit():  
-            return Response({"detail": "Invalid or missing ID."}, status=status.HTTP_400_BAD_REQUEST)
+        if pk is None or not str(pk).isdigit():
+            return Response(
+                {"detail": "Invalid or missing ID."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         offer_detail = get_object_or_404(OfferDetails, pk=kwargs.get("pk"))
         serializer = self.get_serializer(offer_detail)
-        return Response(serializer.data, status=status.HTTP_200_OK) 
-
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def handle_exception(self, exc):
         """
@@ -240,5 +244,8 @@ class OfferDetailsViewSet(viewsets.ModelViewSet):
         """
         response = super().handle_exception(exc)
         if response is None:
-            return Response({"detail": "Internal server error."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            return Response(
+                {"detail": "Internal server error."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return response

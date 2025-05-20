@@ -3,8 +3,8 @@ from rest_framework import routers
 from .views import ReviewViewSet
 
 router = routers.SimpleRouter()
-router.register(r'', ReviewViewSet, basename='reviews')
+router.register(r"", ReviewViewSet, basename="reviews")
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

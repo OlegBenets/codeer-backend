@@ -11,14 +11,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """
     ViewSet for creating, retrieving, updating, and deleting reviews between customers and business users.
     """
+
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     permission_classes = [IsAuthenticated]
 
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['business_user', 'reviewer'] 
-    ordering_fields = ['rating', 'updated_at'] 
-
+    filterset_fields = ["business_user", "reviewer"]
+    ordering_fields = ["rating", "updated_at"]
 
     def get_permissions(self):
         """
@@ -27,12 +27,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return:
             list: List of permission instances for the current action.
         """
-        if self.action in ['create']:
+        if self.action in ["create"]:
             return [IsCustomerOrAdmin()]
-        elif self.action in ['update', 'partial_update', 'destroy']:
+        elif self.action in ["update", "partial_update", "destroy"]:
             return [IsReviewerOrAdmin()]
-        return [permissions.IsAuthenticated()]  
-
+        return [permissions.IsAuthenticated()]
 
     def partial_update(self, request, *args, **kwargs):
         """
@@ -43,12 +42,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return:
             Response: Updated review data or validation error.
         """
-        allowed_fields = {'rating', 'description'}
+        allowed_fields = {"rating", "description"}
         mutable_data = request.data.copy()
         request._full_data = {key: value for key, value in mutable_data.items() if key in allowed_fields}
         return super().partial_update(request, *args, **kwargs)
-    
-    
+
     def perform_create(self, serializer):
         """
         Create a new review, ensuring a user can only review a business once.
@@ -58,11 +56,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         raise:
             ValidationError: If the user has already reviewed the business.
         """
-        business_user = serializer.validated_data['business_user']
+        business_user = serializer.validated_data["business_user"]
         if Review.objects.filter(reviewer=self.request.user, business_user=business_user).exists():
             raise serializers.ValidationError({"detail": "You have already submitted a review for this business user."})
         serializer.save(reviewer=self.request.user)
-
 
     def get_queryset(self):
         """
@@ -72,8 +69,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
             QuerySet: Filtered reviews based on business_user_id and reviewer_id.
         """
         queryset = super().get_queryset()
-        business_user_id = self.request.query_params.get('business_user_id')
-        reviewer_id = self.request.query_params.get('reviewer_id')
+        business_user_id = self.request.query_params.get("business_user_id")
+        reviewer_id = self.request.query_params.get("reviewer_id")
 
         if business_user_id:
             queryset = queryset.filter(business_user_id=business_user_id)

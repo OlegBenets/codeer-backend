@@ -10,6 +10,7 @@ class OrderSerializer(serializers.ModelSerializer):
     return:
         Serialized Order data.
     """
+
     customer_user = serializers.PrimaryKeyRelatedField(read_only=True)
     business_user = serializers.PrimaryKeyRelatedField(read_only=True)
     title = serializers.CharField(read_only=True)
@@ -21,7 +22,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CreateOrderSerializer(serializers.Serializer):
@@ -35,8 +36,8 @@ class CreateOrderSerializer(serializers.Serializer):
     raise:
         OfferDetails.DoesNotExist: If the offer_detail_id does not exist.
     """
-    offer_detail_id = serializers.IntegerField()
 
+    offer_detail_id = serializers.IntegerField()
 
     def create(self, validated_data):
         """
@@ -49,11 +50,11 @@ class CreateOrderSerializer(serializers.Serializer):
         raise:
             OfferDetails.DoesNotExist: If offer_detail_id is invalid.
         """
-        offer_detail = OfferDetails.objects.get(id=validated_data['offer_detail_id'])
+        offer_detail = OfferDetails.objects.get(id=validated_data["offer_detail_id"])
         offer = offer_detail.offer
 
-        customer_user = self.context['request'].user
-        business_user = offer.user  
+        customer_user = self.context["request"].user
+        business_user = offer.user
 
         order = Order(
             customer_user=customer_user,
@@ -65,12 +66,11 @@ class CreateOrderSerializer(serializers.Serializer):
             price=offer_detail.price,
             features=offer_detail.features,
             offer_type=offer_detail.offer_type,
-            status='in_progress'
+            status="in_progress",
         )
         order.save(force_insert=True)
 
         return order
-
 
     def to_representation(self, instance):
         """
@@ -97,7 +97,7 @@ class CreateOrderSerializer(serializers.Serializer):
         }
         return data
 
-    
+
 class UpdateOrderStatusSerializer(serializers.ModelSerializer):
     """
     Serializer to update only the status field of an Order.
@@ -107,10 +107,10 @@ class UpdateOrderStatusSerializer(serializers.ModelSerializer):
     raise:
         serializers.ValidationError: If status value is invalid.
     """
+
     class Meta:
         model = Order
-        fields = ['status']
-
+        fields = ["status"]
 
     def validate_status(self, value):
         """
@@ -123,11 +123,10 @@ class UpdateOrderStatusSerializer(serializers.ModelSerializer):
         raise:
             serializers.ValidationError: If status is invalid.
         """
-        valid_statuses = ['in_progress', 'completed', 'cancelled']
+        valid_statuses = ["in_progress", "completed", "cancelled"]
         if value not in valid_statuses:
             raise serializers.ValidationError(f"Invalid status. Allowed values are: {', '.join(valid_statuses)}")
         return value
-
 
     def update(self, instance, validated_data):
         """
@@ -139,10 +138,9 @@ class UpdateOrderStatusSerializer(serializers.ModelSerializer):
         return:
             Order: Updated Order instance.
         """
-        instance.status = validated_data.get('status', instance.status)
+        instance.status = validated_data.get("status", instance.status)
         instance.save()
-        return instance  
-
+        return instance
 
     def to_representation(self, instance):
         """
