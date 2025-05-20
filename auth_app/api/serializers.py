@@ -67,11 +67,7 @@ class RegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError({"password": "Das Passwort muss mindestens 8 Zeichen lang sein."})
         if not any(char.isdigit() for char in password):
             raise serializers.ValidationError({"password": "Das Passwort muss mindestens eine Zahl enthalten."})
-        # if not any(char.islower() for char in password):
-        #     raise serializers.ValidationError({"password": "Das Passwort muss mindestens einen Kleinbuchstaben enthalten."})
-        # if not any(char.isupper() for char in password):
-        #     raise serializers.ValidationError({"password": "Das Passwort muss mindestens einen Großbuchstaben enthalten."})
-
+        
         return data
 
     def create(self, validated_data):
